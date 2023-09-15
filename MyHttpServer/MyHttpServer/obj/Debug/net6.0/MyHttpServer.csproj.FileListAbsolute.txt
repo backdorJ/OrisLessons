@@ -1,0 +1,15 @@
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/MyHttpServer
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/MyHttpServer.deps.json
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/MyHttpServer.runtimeconfig.json
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/MyHttpServer.dll
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/ref/MyHttpServer.dll
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/bin/Debug/net6.0/MyHttpServer.pdb
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.csproj.AssemblyReference.cache
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.GeneratedMSBuildEditorConfig.editorconfig
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.AssemblyInfoInputs.cache
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.AssemblyInfo.cs
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.csproj.CoreCompileInputs.cache
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.dll
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/ref/MyHttpServer.dll
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.pdb
+/home/ebet/Tasks/MyHttpServer/MyHttpServer/obj/Debug/net6.0/MyHttpServer.genruntimeconfig.cache
