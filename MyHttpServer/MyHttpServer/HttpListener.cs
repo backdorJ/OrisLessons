@@ -1,32 +1,94 @@
+using System.Net;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace MyHttpServer;
 
-public class HttpListener
+public class HttpServer
 {
     private HttpListener _listener;
     private bool _running = false;
 
-    public HttpListener()
+    public HttpServer()
     {
         _listener = new HttpListener();
     }
 
-    public void Start()
+    public async Task Start()
     {
-        var threadServer = new Thread(new ThreadStart(Run));
-        threadServer.Start();
+        await Task.Run(async () =>
+        {
+            await Run();
+        });
     }
 
     private async Task Run()
     {
         _running = true;
-        var config = await GetConnectConfigurationServer("appsettings.json");
-        _listener
-        _listener.Start();;
+        var config = await GetConnectionConfigurationServer("appsettings.json");
+        _listener.Prefixes.Add($"{config.Address}:{config.Port}/");
+        Console.WriteLine($"Server has been started. For address: {config.Address}:{config.Port}");
+        _listener.Start();
+
+        //Task.Run(ProcessCallback);
+
+        while (_running)
+        {
+            var context = await _listener.GetContextAsync();
+            
+            
+            Task.Run(async () =>
+            {
+                var request = context.Request;
+                var response = context.Response;
+                var requestUrl = request.Url.LocalPath;
+                if (requestUrl.EndsWith(".html"))
+                {
+                    var filePath = Path.Combine(config.StaticPathFiles, requestUrl.TrimStart('/'));
+                    Console.WriteLine(filePath);
+                    if (File.Exists(filePath))
+                    {
+                        Console.WriteLine(filePath);
+                        response.ContentType = "text/html;";
+                        var buffer = File.ReadAllBytes(filePath);
+                        response.ContentLength64 = buffer.Length;
+                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    }
+                    else
+                    {
+                        response.StatusCode = (int)HttpStatusCode.NotFound;
+                        response.ContentType = "text/plain; charset=utf-8";
+                        var notFoundMessage = "404 File Not Found - файл не найден";
+                        var buffer = Encoding.UTF8.GetBytes(notFoundMessage);
+                        response.ContentLength64 = buffer.Length;
+                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                        Console.WriteLine("File not founded");
+                    }
+                }
+                response.Close();
+            });
+        }
+
+        _running = false;
+        _listener.Close();
+        ((IDisposable)_listener).Dispose();
+        Console.WriteLine("Server has been stopped.");
+    }
+    
+    private void ProcessCallback()
+    {
+        while (true)
+        {
+            var input = Console.ReadLine();
+            if (input == "stop")
+            {
+                _running = false; // Установите флаг _running в false для остановки сервера
+                break;
+            }
+        }
     }
 
-    private async Task<AppSettingsConfig> GetConnectConfigurationServer(string fileName)
+    private async Task<AppSettingsConfig> GetConnectionConfigurationServer(string fileName)
     {
         try
         {
@@ -35,13 +97,32 @@ public class HttpListener
                 Console.WriteLine("Файл appsettings.json не найден");
                 throw new FileNotFoundException();
             }
-            
+
             var json = await File.OpenText(fileName).ReadToEndAsync();
-            return JsonConvert.DeserializeObject<AppSettingsConfig>(json);
+            var obj = JsonConvert.DeserializeObject<AppSettingsConfig>(json);
+            EnsureStaticFilePath(obj);
+            return obj;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Console.WriteLine("Ошибка при десериализации");
+            throw;
+        }
+    }
+
+    private void EnsureStaticFilePath(AppSettingsConfig config)
+    {
+        try
+        {
+            if (!Directory.Exists(config.StaticPathFiles))
+            {
+                Directory.CreateDirectory(config.StaticPathFiles);
+                Console.WriteLine("Была создана папка static в пути {configPath}", config.StaticPathFiles);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Не удалось создать папку по указаному пути: {config.StaticPathFiles}");
             throw;
         }
     }
