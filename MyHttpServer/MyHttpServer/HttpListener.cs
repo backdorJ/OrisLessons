@@ -82,7 +82,7 @@ public class HttpServer
             var input = Console.ReadLine();
             if (input == "stop")
             {
-                _running = false; // Установите флаг _running в false для остановки сервера
+                _running = false;
                 break;
             }
         }
