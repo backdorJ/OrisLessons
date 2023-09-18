@@ -30,7 +30,7 @@ public class HttpServer
         Console.WriteLine($"Server has been started. For address: {config.Address}:{config.Port}");
         _listener.Start();
 
-        //Task.Run(ProcessCallback);
+        Task.Run(ProcessCallback);
 
         while (_running)
         {
@@ -42,11 +42,18 @@ public class HttpServer
                 var request = context.Request;
                 var response = context.Response;
                 var requestUrl = request.Url.LocalPath;
-                if (requestUrl.EndsWith(".html"))
+                if (requestUrl.EndsWith(".html") || requestUrl.EndsWith('/'))
                 {
                     var filePath = Path.Combine(config.StaticPathFiles, requestUrl.TrimStart('/'));
                     Console.WriteLine(filePath);
-                    if (File.Exists(filePath))
+                    if (filePath.EndsWith("static"))
+                    {
+                        response.ContentType = "text/html;";
+                        var buffer = File.ReadAllBytes(Path.Combine(config.StaticPathFiles, "index.html"));
+                        response.ContentLength64 = buffer.Length;
+                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    }
+                    else if (File.Exists(filePath))
                     {
                         Console.WriteLine(filePath);
                         response.ContentType = "text/html;";
