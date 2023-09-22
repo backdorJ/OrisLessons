@@ -41,35 +41,23 @@ public class HttpServer
             Task.Run(async () =>
             {
                 var request = context.Request;
-                var response = context.Response;
-                var requestUrl = request.Url.LocalPath;
-                if (requestUrl.EndsWith(".html") || requestUrl.EndsWith('/'))
+                using var response = context.Response;
+                var requestUrl = request.Url.AbsolutePath;
+                if (requestUrl.EndsWith(".html"))
                 {
-                    var filePath = Path.Combine(config.StaticPathFiles, requestUrl.TrimStart('/'));
-                    if (filePath.EndsWith("static"))
-                    {
-                        response.ContentType = "text/html;";
-                        var buffer = File.ReadAllBytes(Path.Combine(config.StaticPathFiles, "index.html"));
-                        response.ContentLength64 = buffer.Length;
-                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                    }
-                    else if (File.Exists(filePath))
-                    {
-                        Console.WriteLine(filePath);
-                        response.ContentType = "text/html;";
-                        var buffer = await File.ReadAllBytesAsync(filePath);
-                        response.ContentLength64 = buffer.Length;
-                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                    }
+                    var filePath = Path.Combine("." + requestUrl);
+                    if (File.Exists(filePath))
+                        await DisplayFoundPageAsync(response, filePath, token);
                     else
-                    {
-                        response.StatusCode = (int)HttpStatusCode.NotFound;
-                        response.ContentType = "text/plain; charset=utf-8";
-                        var buffer = Encoding.UTF8.GetBytes("404 File Not Found - файл не найден");
-                        response.ContentLength64 = buffer.Length;
-                        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                        Console.WriteLine("File not founded");
-                    }
+                        DisplayNotFoundPage(response);
+                }
+                else
+                {
+                    var mainPagePath = Path.Combine(config.StaticPathFiles, "index.html");
+                    if (File.Exists(mainPagePath))
+                        await DisplayFoundPageAsync(response, mainPagePath, token);
+                    else
+                        DisplayNotFoundPage(response);
                 }
                 response.Close();
             });
@@ -79,6 +67,24 @@ public class HttpServer
         _listener.Close();
         ((IDisposable)_listener).Dispose();
         Console.WriteLine("Server has been stopped.");
+    }
+
+    private void DisplayNotFoundPage(HttpListenerResponse response)
+    {
+        response.StatusCode = (int)HttpStatusCode.NotFound;
+        response.ContentType = "text/plain; charset=utf-8";
+        var buffer = Encoding.UTF8.GetBytes("404 File Not Found - файл не найден");
+        response.ContentLength64 = buffer.Length;
+        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+        Console.WriteLine("File not founded");
+    }
+
+    private async Task DisplayFoundPageAsync(HttpListenerResponse response, string pathPage, CancellationToken token)
+    {
+        response.ContentType = "text/html;";
+        var buffer = await File.ReadAllBytesAsync(pathPage, token);
+        response.ContentLength64 = buffer.Length;
+        response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
     }
     
     private void ProcessCallback()
