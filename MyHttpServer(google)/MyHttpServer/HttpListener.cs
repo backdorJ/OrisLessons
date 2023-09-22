@@ -8,6 +8,8 @@ public class HttpServer
 {
     private HttpListener _listener;
     private bool _running = false;
+    private CancellationTokenSource cts = new();
+    private object _lock = new();
 
     public HttpServer()
     {
@@ -28,6 +30,7 @@ public class HttpServer
         var config = await GetConnectionConfigurationServer("appsettings.json");
         _listener.Prefixes.Add($"{config.Address}:{config.Port}/");
         Console.WriteLine($"Server has been started. For address: {config.Address}:{config.Port}");
+        var token = cts.Token;
         _listener.Start();
 
         Task.Run(ProcessCallback);
@@ -35,8 +38,6 @@ public class HttpServer
         while (_running)
         {
             var context = await _listener.GetContextAsync();
-            
-            
             Task.Run(async () =>
             {
                 var request = context.Request;
@@ -45,7 +46,6 @@ public class HttpServer
                 if (requestUrl.EndsWith(".html") || requestUrl.EndsWith('/'))
                 {
                     var filePath = Path.Combine(config.StaticPathFiles, requestUrl.TrimStart('/'));
-                    Console.WriteLine(filePath);
                     if (filePath.EndsWith("static"))
                     {
                         response.ContentType = "text/html;";
@@ -57,7 +57,7 @@ public class HttpServer
                     {
                         Console.WriteLine(filePath);
                         response.ContentType = "text/html;";
-                        var buffer = File.ReadAllBytes(filePath);
+                        var buffer = await File.ReadAllBytesAsync(filePath);
                         response.ContentLength64 = buffer.Length;
                         response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                     }
@@ -65,8 +65,7 @@ public class HttpServer
                     {
                         response.StatusCode = (int)HttpStatusCode.NotFound;
                         response.ContentType = "text/plain; charset=utf-8";
-                        var notFoundMessage = "404 File Not Found - файл не найден";
-                        var buffer = Encoding.UTF8.GetBytes(notFoundMessage);
+                        var buffer = Encoding.UTF8.GetBytes("404 File Not Found - файл не найден");
                         response.ContentLength64 = buffer.Length;
                         response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                         Console.WriteLine("File not founded");
@@ -84,13 +83,17 @@ public class HttpServer
     
     private void ProcessCallback()
     {
-        while (true)
+        lock (_lock)
         {
-            var input = Console.ReadLine();
-            if (input == "stop")
+            while (true)
             {
-                _running = false;
-                break;
+                var input = Console.ReadLine();
+                if (input == "stop")
+                {
+                    _running = false;
+                    cts.Cancel();
+                    break;
+                }
             }
         }
     }
