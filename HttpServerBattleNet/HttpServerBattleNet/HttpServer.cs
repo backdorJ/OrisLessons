@@ -10,14 +10,16 @@ public class HttpServer
     private HttpListener _listener;
     private bool _running = false;
     private CancellationTokenSource cts = new();
-    private object _lock = new();
+    private static readonly Lazy<HttpServer> _lazy = new Lazy<HttpServer>(() => new HttpServer());
 
-    public HttpServer()
+    private HttpServer()
     {
         _listener = new HttpListener();
     }
 
-    public async Task Start()
+    public static HttpServer Instance => _lazy.Value;
+
+    public async Task StartAsync()
     {
         await Task.Run(async () => { await Run(); });
     }
@@ -30,11 +32,14 @@ public class HttpServer
         Console.WriteLine($"Server has been started. For address: {config.Address}:{config.Port}");
         var token = cts.Token;
         _listener.Start();
-
+        
         Task.Run(ProcessCallback);
 
         while (_running)
         {
+            if (token.IsCancellationRequested)
+                return;
+            
             var context = await _listener.GetContextAsync();
             var request = context.Request;
             using var response = context.Response;
@@ -60,7 +65,7 @@ public class HttpServer
                 var imageFilePath = Path.Combine(config.StaticPathFiles, requestUrl.Trim('/'));
                 var typeOfContent = requestUrl[requestUrl.IndexOf('.')..];
                 if (File.Exists(imageFilePath))
-                    await DisplayFoundImageFileAsync(response, imageFilePath,typeOfContent, token);
+                    await DisplayFoundImageFileAsync(response, imageFilePath, typeOfContent, token);
                 else
                     Console.WriteLine("Image file not found");
             }
@@ -69,7 +74,12 @@ public class HttpServer
                 var queryParams = request.QueryString;
                 var email = queryParams["email"];
                 var password = queryParams["password"];
-                MailSender.SendEmailAsync(password, email, "Hello from battle.net");
+                if (password == null) continue;
+                if (email != null)
+                    await MailSender.SendEmailAsync(password, email, "Hello from battle.net");
+                var bytes = Encoding.UTF8.GetBytes("Hello, message has been send");
+                response.ContentLength64 = bytes.Length;
+                await response.OutputStream.WriteAsync(bytes, token);
             }
             else
             {
@@ -103,6 +113,9 @@ public class HttpServer
     private async Task DisplayFoundCssFileAsync(HttpListenerResponse response, string cssFilePath,
         CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+            return;
+
         response.ContentType = DefineContentType(".css");
         var buffer = await File.ReadAllBytesAsync(cssFilePath, token);
         response.ContentLength64 = buffer.Length;
@@ -112,6 +125,9 @@ public class HttpServer
     private async Task DisplayFoundImageFileAsync(HttpListenerResponse response, string cssFilePath, string contentType,
         CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+            return;
+
         response.ContentType = DefineContentType(contentType);
         var buffer = await File.ReadAllBytesAsync(cssFilePath, token);
         response.ContentLength64 = buffer.Length;
@@ -130,6 +146,9 @@ public class HttpServer
 
     private async Task DisplayFoundPageAsync(HttpListenerResponse response, string pathPage, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+            return;
+
         response.ContentType = "text/html;";
         var buffer = await File.ReadAllBytesAsync(pathPage, token);
         response.ContentLength64 = buffer.Length;
@@ -138,17 +157,14 @@ public class HttpServer
 
     private void ProcessCallback()
     {
-        lock (_lock)
+        while (true)
         {
-            while (true)
+            var input = Console.ReadLine();
+            if (input == "stop")
             {
-                var input = Console.ReadLine();
-                if (input == "stop")
-                {
-                    _running = false;
-                    cts.Cancel();
-                    break;
-                }
+                _running = false;
+                cts.Cancel();
+                break;
             }
         }
     }

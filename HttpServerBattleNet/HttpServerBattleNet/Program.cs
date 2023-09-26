@@ -2,10 +2,10 @@
 
 class Program
 {
-    private static void Main()
+    private static async Task Main()
     {
-        var server = new HttpServer();
-        server.Start();
+        var server = HttpServer.Instance;
+        await server.StartAsync();
         Console.ReadKey();
     }
 }
