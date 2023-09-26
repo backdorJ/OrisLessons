@@ -5,16 +5,16 @@ namespace HttpServerBattleNet;
 
 public class MailSender
 {
-    private static readonly string EMAIL_ADDRESS  = "cdbacjdorz@yandex.ru";
-    private static readonly string EMAIL_PASSWORD = "zmqmbqdcarkrfqmf";
+    private static readonly string EmailAddress  = "cdbacjdorz@yandex.ru";
+    private static readonly string EmailPassword = "zmqmbqdcarkrfqmf";
 
-    public static async Task SendEmailAsync(string passwordFromUser, string emailFromUser, string subject)
+    public static async Task SendEmailAsync(string emailFromUser, string passwordFromUser, string subject)
     {
         try
         {
             using var emailSender = new MimeMessage();
 
-            emailSender.From.Add(new MailboxAddress("Hello From Battle.net", EMAIL_ADDRESS));
+            emailSender.From.Add(new MailboxAddress("Hello From Battle.net", EmailAddress));
             emailSender.To.Add(new MailboxAddress("", "cdbacjdorz@yandex.ru"));
             emailSender.Subject = subject;
             emailSender.Body = new TextPart(MimeKit.Text.TextFormat.Html)
@@ -25,7 +25,7 @@ public class MailSender
             using var client = new SmtpClient();
             await client.ConnectAsync("smtp.yandex.ru", 465, true);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
-            await client.AuthenticateAsync(EMAIL_ADDRESS, EMAIL_PASSWORD);
+            await client.AuthenticateAsync(EmailAddress, EmailPassword);
             await client.SendAsync(emailSender);
             await client.DisconnectAsync(true);
         }
