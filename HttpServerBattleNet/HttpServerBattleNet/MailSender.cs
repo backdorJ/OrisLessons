@@ -15,7 +15,7 @@ public class MailSender
             using var emailSender = new MimeMessage();
 
             emailSender.From.Add(new MailboxAddress("Hello From Battle.net", EmailAddress));
-            emailSender.To.Add(new MailboxAddress("", "cdbacjdorz@yandex.ru"));
+            emailSender.To.Add(new MailboxAddress("", EmailAddress));
             emailSender.Subject = subject;
             emailSender.Body = new TextPart(MimeKit.Text.TextFormat.Html)
             {
