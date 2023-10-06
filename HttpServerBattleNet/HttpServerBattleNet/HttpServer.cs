@@ -1,91 +1,70 @@
 using System.Net;
 using System.Text;
 using HttpServerBattleNet.Configuration;
+using HttpServerBattleNet.Handler;
+using HttpServerBattleNet.Services;
 using Newtonsoft.Json;
 
 namespace HttpServerBattleNet;
 
 public class HttpServer
 {
-    private HttpListener _listener;
-    private ServerHandler _serverHandler;
-    private bool _running = false;
+    private HttpListener _listener = new();
     private CancellationTokenSource cts = new();
-    private static readonly Lazy<HttpServer> _lazy = new Lazy<HttpServer>(() => new HttpServer());
+    private AppSettingsConfig _config = Configuration.ServerConfiguration.Config;
+    private Handler.Handler _staticFileHandler = new StaticFileHandlers();
+    private Handler.Handler _controllerHandler = new ControllerHandler();
 
-    private HttpServer()
+    public HttpServer()
     {
-        _listener = new HttpListener();
-        _serverHandler = new ServerHandler();
-    }
-
-    public static HttpServer Instance => _lazy.Value;
-
-    public async Task StartAsync()
-    {
-        _running = true;
-        await Task.Run(async () => { await Run(); });
-    }
-
-    private async Task Run()
-    {
-        var config = await _serverHandler.GetConnectionConfigurationServer("appsettings.json");
-        _listener.Prefixes.Add($"{config.Address}:{config.Port}/");
-        Console.WriteLine($"Server has been started. For address: {config.Address}:{config.Port}");
-        var token = cts.Token;
-        _listener.Start();
-        
-        Task.Run(ProcessCallback);
-
-        while (_running)
-        {
-            if (token.IsCancellationRequested)
-                return;
-            
-            var context = await _listener.GetContextAsync();
-            var request = context.Request;
-            using var response = context.Response;
-            var requestUrl = request.Url!.AbsolutePath;
-            var pathOfSource = Path.Combine(config.StaticPathFiles, requestUrl.Trim('/'));
-            
-            if (requestUrl == "/login")
-            {
-                var dataOfUser = await _serverHandler.GetCurrentUserDataAsync(request);
-                if (dataOfUser.All(x => true))
-                    await MailSender.SendEmailAsync(dataOfUser[0], dataOfUser[1], "Your data from battle.net");
-                Console.WriteLine("Message has been sent on email.");
-            }
-            else if (requestUrl.EndsWith('/'))
-            {
-                var pathOfIndex = Path.Combine(config.StaticPathFiles, "index.html");
-                if (File.Exists(pathOfIndex)) await _serverHandler.InvokePageAsync(response, pathOfIndex, token);
-                else await _serverHandler.InvokeFailedPageAsync(response, pathOfIndex, token);
-            }
-            else
-            {
-                if (File.Exists(pathOfSource)) await _serverHandler.InvokePageAsync(response, pathOfSource, token);
-                else await _serverHandler.InvokeFailedPageAsync(response, pathOfSource, token);
-            }
-        }
-
-        _running = false;
-        _listener.Close();
-        ((IDisposable)_listener).Dispose();
-        Console.WriteLine("Server has been stopped.");
+        _listener.Prefixes.Add($"{_config.Address}:{_config.Port}/");
+       // _staticFileHandler = new StaticFileHandlers();
+       // _controllerHandler = new ControllerHandler();
+        Console.WriteLine($"Server has been started: {_config.Address}:{_config.Port}/");
     }
     
+    public async Task StartAsync()
+    {
+        var token = cts.Token;
+        await Task.Run(async () => { await Run(token); });
+    }
+
+    private async Task Run(CancellationToken token)
+    {
+        _listener.Start();
+        Task.Run(ProcessCallback);
+
+        try
+        {
+            while (true)
+            {
+                token.ThrowIfCancellationRequested();
+                
+                var context = await _listener.GetContextAsync();
+                _staticFileHandler.Successor = _controllerHandler;
+                _staticFileHandler.HandleRequest(context);
+            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            _listener.Close();
+            ((IDisposable)_listener).Dispose();
+            Console.WriteLine("Server has been stopped.");   
+        }
+    }
 
     private void ProcessCallback()
     {
         while (true)
         {
             var input = Console.ReadLine();
-            if (input == "stop")
-            {
-                _running = false;
-                cts.Cancel();
-                break;
-            }
+            if (input != "stop") continue;
+            cts.Cancel();
+            break;
         }
     }
 }

@@ -29,7 +29,7 @@ public class ServerHandler
         }
     }
 
-    internal async Task InvokePageAsync(HttpListenerResponse response,string filePath, CancellationToken token)
+    internal async Task InvokePageAsync(HttpListenerResponse response, string filePath, CancellationToken token)
     {
         var contentType = GetContentType(filePath[filePath.IndexOf('.')..]);
         response.ContentType = contentType;
@@ -48,13 +48,12 @@ public class ServerHandler
         Console.WriteLine("File not founded");
     }
 
-    internal async Task<string[]> GetCurrentUserDataAsync(HttpListenerRequest request)
+    internal string[] GetCurrentUserData(HttpListenerRequest request)
     {
-        await using var body = request.InputStream;
-        using var streamReader = new StreamReader(body);
-        var tempOfData = await streamReader.ReadToEndAsync();
-        var currentOfUserData = tempOfData.Split('&');
-        return currentOfUserData;
+        using var streamReader = new StreamReader(request.InputStream);
+        var tempOfData = streamReader.ReadToEnd();
+        var currentOfUserData = tempOfData?.Split('&');
+        return new string[] { WebUtility.UrlDecode(currentOfUserData[0][6..]), currentOfUserData[1][9..] };
     }
 
     private string GetContentType(string type)

@@ -50,11 +50,13 @@
       <None Update="static\styles\style.css">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="static\index.html">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="static\404.html">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="static\index.html">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
+
+
 </Project>
