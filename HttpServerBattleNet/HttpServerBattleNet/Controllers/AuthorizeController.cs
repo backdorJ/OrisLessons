@@ -17,7 +17,7 @@ public class AuthorizeController
     [Get("GetEmailList")]
     public string GetEmailList()
     {
-        var htmlCode = "<html><head></head><body><h1>Вы вызвали GetEmailList</h1></body></html>";
+        var htmlCode = "<h1>You are open GetEmailList method</h1>";
         return htmlCode;
     }
     
