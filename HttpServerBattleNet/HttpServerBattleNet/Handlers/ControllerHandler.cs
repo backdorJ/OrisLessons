@@ -59,27 +59,32 @@ public class ControllerHandler : Handler
                 .ToArray();
             }
             
-            var result = method?.Invoke(Activator.CreateInstance(controller), queryParams);
+            var resultFromMethod = method?.Invoke(Activator.CreateInstance(controller), queryParams);
 
-            if (result is string resultOfString)
+            switch (resultFromMethod)
             {
-                response.ContentType = DictionaryExtensions._dictOfExtenshions[".html"];
-                var buffer = Encoding.UTF8.GetBytes(resultOfString);
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
-            }
-            else if (result is Account[] arrayOfAccounts)
-            {
-                response.ContentType = DictionaryExtensions._dictOfExtenshions[".js"];
-                var json = JsonConvert.SerializeObject(arrayOfAccounts, Formatting.Indented);
-                var buffer = Encoding.UTF8.GetBytes(json);
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
+                case string resultOfString:
+                {
+                    response.ContentType = DictionaryExtensions._dictOfExtenshions[".html"];
+                    var buffer = Encoding.UTF8.GetBytes(resultOfString);
+                    response.ContentLength64 = buffer.Length;
+                    response.OutputStream.Write(buffer, 0, buffer.Length);
+                    break;
+                }
+                case Account[] arrayOfAccounts:
+                {
+                    response.ContentType = DictionaryExtensions._dictOfExtenshions[".js"];
+                    var json = JsonConvert.SerializeObject(arrayOfAccounts, Formatting.Indented);
+                    var buffer = Encoding.UTF8.GetBytes(json);
+                    response.ContentLength64 = buffer.Length;
+                    response.OutputStream.Write(buffer, 0, buffer.Length);
+                    break;
+                }
             }
         }
         catch (ArgumentNullException e)
         {
             Console.WriteLine(e.Message);
-        }
+        }   
     }
 }
