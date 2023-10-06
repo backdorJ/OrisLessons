@@ -1,6 +1,10 @@
 using System.Net;
 using System.Reflection;
+using System.Text;
+using HttpServerBattleNet.asda;
 using HttpServerBattleNet.Attribuets;
+using HttpServerBattleNet.Model;
+using Newtonsoft.Json;
 
 namespace HttpServerBattleNet.Handler;
 
@@ -10,7 +14,10 @@ public class ControllerHandler : Handler
     {
         try
         {
-            var strParams = context?.Request.Url!
+            var request = context.Request;
+            using var response = context.Response;
+            
+            var strParams = request.Url!
                 .Segments
                 .Skip(1)
                 .Select(s => s.Replace("/", ""))
@@ -37,12 +44,9 @@ public class ControllerHandler : Handler
                 .FirstOrDefault(c => ((ControllerAttribute)Attribute.GetCustomAttribute(c, typeof(ControllerAttribute))!)
                     .ControllerName.Equals(controllerName, StringComparison.OrdinalIgnoreCase));
 
-            var list = controller?.GetMethods()
-                .Select(method => new { Name = method.Name, Attributes = method.GetCustomAttributes()});
-
             var method = controller?.GetMethods()
                 .Where(x => x.GetCustomAttributes(true)
-                    .Any(attr => attr.GetType().Name.Equals($"{context.Request.HttpMethod}Attribute",
+                    .Any(attr => attr.GetType().Name.Equals($"{request.HttpMethod}Attribute",
                         StringComparison.OrdinalIgnoreCase)))
                 .FirstOrDefault(m => m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase));
             
@@ -55,7 +59,23 @@ public class ControllerHandler : Handler
                 .ToArray();
             }
             
-            method?.Invoke(Activator.CreateInstance(controller), queryParams);   
+            var result = method?.Invoke(Activator.CreateInstance(controller), queryParams);
+
+            if (result is string resultOfString)
+            {
+                response.ContentType = DictionaryExtensions._dictOfExtenshions[".html"];
+                var buffer = Encoding.UTF8.GetBytes(resultOfString);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+            }
+            else if (result is Account[] arrayOfAccounts)
+            {
+                response.ContentType = DictionaryExtensions._dictOfExtenshions[".js"];
+                var json = JsonConvert.SerializeObject(arrayOfAccounts, Formatting.Indented);
+                var buffer = Encoding.UTF8.GetBytes(json);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+            }
         }
         catch (ArgumentNullException e)
         {
