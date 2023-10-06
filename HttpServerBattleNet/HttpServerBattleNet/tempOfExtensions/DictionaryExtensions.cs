@@ -8,6 +8,7 @@ public static class DictionaryExtensions
         [".html"] = "text/html",
         [".jpg"] = "image/jpeg",
         [".svg"] = "image/svg+xml",
-        [".png"] = "image/png"
+        [".png"] = "image/png",
+        [".js"] = "application/json"
     };
 }
