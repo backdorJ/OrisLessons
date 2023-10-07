@@ -1,6 +1,11 @@
 namespace HttpServerBattleNet.Attribuets;
 
-public interface IHttpMethodAttribute
+public class HttpMethodAttribute : Attribute
 {
-    public string ActionName { get; }
+    public HttpMethodAttribute(string actionName)
+    {
+        ActionName = actionName;
+    }
+
+    public string ActionName { get; set; }
 }

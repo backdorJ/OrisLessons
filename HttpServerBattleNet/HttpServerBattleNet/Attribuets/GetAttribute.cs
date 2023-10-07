@@ -1,11 +1,8 @@
 namespace HttpServerBattleNet.Attribuets;
 
-public class GetAttribute : Attribute, IHttpMethodAttribute
+public class GetAttribute : HttpMethodAttribute
 {
-    public GetAttribute(string actionName)
+    public GetAttribute(string actionName) : base(actionName)
     {
-        ActionName = actionName;
     }
-
-    public string ActionName { get; }
 }
