@@ -9,6 +9,6 @@ public static class DictionaryExtensions
         [".jpg"] = "image/jpeg",
         [".svg"] = "image/svg+xml",
         [".png"] = "image/png",
-        [".js"] = "application/json"
+        ["json"] = "application/json"
     };
 }

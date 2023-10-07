@@ -18,15 +18,13 @@ public class HttpServer
     public HttpServer()
     {
         _listener.Prefixes.Add($"{_config.Address}:{_config.Port}/");
-       // _staticFileHandler = new StaticFileHandlers();
-       // _controllerHandler = new ControllerHandler();
         Console.WriteLine($"Server has been started: {_config.Address}:{_config.Port}/");
     }
     
     public async Task StartAsync()
     {
         var token = cts.Token;
-        await Task.Run(async () => { await Run(token); });
+        await Task.Run(() => Run(token), token);
     }
 
     private async Task Run(CancellationToken token)
