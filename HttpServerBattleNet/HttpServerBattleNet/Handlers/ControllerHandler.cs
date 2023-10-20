@@ -73,20 +73,25 @@ public class ControllerHandler : Handler
 
     private static void ProcessResult<T>(T result, HttpListenerResponse response)
     {
-        if (result is string resultOfString)
+        switch (result)
         {
-            response.ContentType = DictionaryExtensions._dictOfExtenshions[".html"];
-            var buffer = Encoding.UTF8.GetBytes(resultOfString);
-            response.ContentLength64 = buffer.Length;
-            response.OutputStream.Write(buffer, 0, buffer.Length);
-        }
-        else if (result is T[] arrayOfObjects)
-        {
-            response.ContentType = DictionaryExtensions._dictOfExtenshions["json"];
-            var json = JsonConvert.SerializeObject(arrayOfObjects, Formatting.Indented);
-            var buffer = Encoding.UTF8.GetBytes(json);
-            response.ContentLength64 = buffer.Length;
-            response.OutputStream.Write(buffer, 0, buffer.Length);
+            case string resultOfString:
+            {
+                response.ContentType = DictionaryExtensions._dictOfExtenshions[".html"];
+                var buffer = Encoding.UTF8.GetBytes(resultOfString);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+                break;
+            }
+            case T[] arrayOfObjects:
+            {
+                response.ContentType = DictionaryExtensions._dictOfExtenshions["json"];
+                var json = JsonConvert.SerializeObject(arrayOfObjects, Formatting.Indented);
+                var buffer = Encoding.UTF8.GetBytes(json);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+                break;
+            }
         }
     }
 }
