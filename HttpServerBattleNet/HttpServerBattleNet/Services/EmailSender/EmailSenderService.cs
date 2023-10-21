@@ -30,7 +30,7 @@ public class EmailSenderService : IEmailSenderService
                     FileName = "MyHttpProjectWithEmailSend.zip"
                 },
             };
-
+            
             foreach (var mimeEntity in attachments)
                 builder.Attachments.Add(mimeEntity);
 
