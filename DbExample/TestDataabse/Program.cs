@@ -4,13 +4,16 @@ using MyORM;
 using TestDataabse;
 
 var myContext = new MyDataContext();
-myContext.Add(new Clients()
+// var res = myContext.Select(new Clients());
+var client = new Clients()
 {
-    age = 19,
-    gender = 1,
-    fullname = "Чусова Елизавета Юрьевна",
-    isanonymous = false,
-    isblocked = false,
-    phonenumber = "89871854613",
-    status = 1
-});
+    id = 4, phonenumber = "999999999", isblocked = true, isanonymous = false,
+    age = 19, fullname = "Hui", gender = 1, status = 0
+};
+var update = myContext.Update(client);
+
+
+// res.ForEach(x => Console.WriteLine($"Id: {x.id}\tFullName: {x.fullname}\t" +
+//                                          $"Age: {x.age}\tIsBlocked:{x.isblocked}\t" +
+//                                          $"IsAnonymous: {x.isanonymous}\tPhone: {x.phonenumber}\t" +
+//                                          $"Status: {x.status}\tGender: {x.gender}"));
