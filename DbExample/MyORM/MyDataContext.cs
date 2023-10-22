@@ -7,15 +7,10 @@ namespace MyORM;
 
 public class MyDataContext : IDatabaseOperation
 {
+    private NpgsqlConnection _connection;
+    
     private string ConnectionString =>
         "Username=damirka20041;Password=root;Host=localhost;Port=5432;Database=StripClub";
-
-    ///  bool ADD<T>() - method - 1 row only [+]
-    ///  bool Update<T>()
-    ///  bool Delete<T>(id)
-    ///  List<T> Select<T>()
-    ///  T SelectById<T>()
-    private NpgsqlConnection _connection;
 
     public bool Add<T>(T entity)
     {
@@ -62,17 +57,82 @@ public class MyDataContext : IDatabaseOperation
 
     public bool Delete<T>(int id)
     {
-        throw new NotImplementedException();
+        var type = typeof(T);
+        var tableName = type.Name;
+
+        var sqlExpression = $"DELETE FROM \"{tableName}\" WHERE \"id\" = {id} ";
+        using (_connection = new NpgsqlConnection(ConnectionString))
+        {
+            _connection.Open();
+            var command = new NpgsqlCommand(sqlExpression, _connection);
+            var number = command.ExecuteNonQuery();
+            Console.WriteLine("Delete {0} object by id: {1}", number, id);
+            return true;
+        }
     }
 
     public List<T> Select<T>(T entity)
     {
-        throw new NotImplementedException();
+        var type = entity?.GetType();
+        var tableName = type?.Name;
+
+        var sqlExpression = $"SELECT * FROM \"{tableName}\"";
+        using (_connection = new NpgsqlConnection(ConnectionString))
+        {
+            _connection.Open();
+            var adapter = new NpgsqlDataAdapter(sqlExpression, _connection);
+            var dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            var listOfTableItems = dataSet.Tables[0];
+            var listOfEntities = new List<T>();
+            
+            foreach (DataRow row in listOfTableItems.Rows)
+            {
+                var objOfEntity = Activator.CreateInstance<T>();
+                foreach (DataColumn column in listOfTableItems.Columns)
+                {
+                    var prop = type.GetProperty(column.ColumnName);
+                    if (prop != null && row[column] != DBNull.Value)
+                        prop.SetValue(objOfEntity, row[column]);
+                }
+                listOfEntities.Add(objOfEntity);
+            }
+
+            return listOfEntities;
+        }
     }
 
     public T SelectById<T>(int id)
     {
-        throw new NotImplementedException();
+        var tableName = typeof(T).Name;
+        var type = typeof(T);
+        var sqlExpression = $"SELECT * FROM \"{tableName}\"" +
+                            $"WHERE \"id\" = {id} ";
+        using (_connection = new NpgsqlConnection(ConnectionString))
+        {
+            _connection.Open();
+            var adapter = new NpgsqlDataAdapter(sqlExpression, _connection);
+            var dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            var listOfArgs = dataSet.Tables[0];
+            
+            foreach (DataRow row in listOfArgs.Rows)
+            {
+                var entity = Activator.CreateInstance<T>();
+                foreach (DataColumn column in listOfArgs.Columns)
+                {
+                    var prop = type.GetProperty(column.ColumnName);
+                    if (prop != null && row[column] != DBNull.Value)
+                    {
+                        prop.SetValue(entity, row[column]);
+                    }
+                }
+
+                return entity;
+            }
+        }
+
+        return default(T);
     }
 
     private bool QueryToDatabase(NpgsqlCommand command)
