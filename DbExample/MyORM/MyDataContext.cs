@@ -52,7 +52,36 @@ public class MyDataContext : IDatabaseOperation
 
     public bool Update<T>(T entity)
     {
-        throw new NotImplementedException();
+        var type = entity?.GetType();
+        var tableName = type?.Name;
+        var id = type?.GetProperty("id");
+        var props = type.GetProperties()
+            .Where(x => !x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        
+        var sqlExpression = $"SELECT * FROM \"{tableName}\" WHERE \"id\" = {id?.GetValue(entity)}";
+        using (_connection = new NpgsqlConnection(ConnectionString))
+        {
+            _connection.Open();
+            var adapter = new NpgsqlDataAdapter(sqlExpression, _connection);
+            var dataSet = new DataSet();
+            adapter.Fill(dataSet);
+
+            var entityFromDatabase = dataSet.Tables[0];
+            var rowToUpdate = entityFromDatabase.Rows[0];
+
+            foreach (var prop in props)
+            {
+                var val = prop.GetValue(entity);
+                rowToUpdate[prop.Name] = val ?? DBNull.Value;
+            }
+
+            var commandBuilder = new NpgsqlCommandBuilder(adapter);
+            adapter.UpdateCommand = commandBuilder.GetUpdateCommand();
+            adapter.Update(dataSet);
+
+            return true;
+        }
     }
 
     public bool Delete<T>(int id)
