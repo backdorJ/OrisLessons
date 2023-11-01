@@ -9,14 +9,18 @@ public class MyDataContext : IDatabaseOperation
 {
     private NpgsqlConnection _connection;
     
-    private string ConnectionString =>
-        "Username=damirka20041;Password=root;Host=localhost;Port=5432;Database=StripClub";
-
+    public MyDataContext(string connectionString)
+    {
+        ConnectionString = connectionString;
+    }
+    
+    public string ConnectionString { get; }
+    
     public bool Add<T>(T entity)
     {
         var type = entity?.GetType();
         var props = type?.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(prop => !(prop.Name.Equals("id", StringComparison.OrdinalIgnoreCase)))
+            .Where(prop => !(prop.Name.Equals("Id", StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         var tableName = type?.Name;
@@ -24,7 +28,7 @@ public class MyDataContext : IDatabaseOperation
         var sb = new StringBuilder();
         var listOfArgs = new List<NpgsqlParameter>();
 
-        sb.AppendFormat("insert into \"{0}\" (", tableName);
+        sb.AppendFormat("insert into \"{0}\" (", tableName.ToLower());
 
         foreach (var prop in props)
         {
@@ -54,12 +58,12 @@ public class MyDataContext : IDatabaseOperation
     {
         var type = entity?.GetType();
         var tableName = type?.Name;
-        var id = type?.GetProperty("id");
+        var id = type?.GetProperty("Id");
         var props = type.GetProperties()
-            .Where(x => !x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+            .Where(x => !x.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
             .ToList();
         
-        var sqlExpression = $"SELECT * FROM \"{tableName}\" WHERE \"id\" = {id?.GetValue(entity)}";
+        var sqlExpression = $"SELECT * FROM \"{tableName.ToLower()}\" WHERE \"Id\" = {id?.GetValue(entity)}";
         using (_connection = new NpgsqlConnection(ConnectionString))
         {
             _connection.Open();
@@ -89,7 +93,7 @@ public class MyDataContext : IDatabaseOperation
         var type = typeof(T);
         var tableName = type.Name;
 
-        var sqlExpression = $"DELETE FROM \"{tableName}\" WHERE \"id\" = {id} ";
+        var sqlExpression = $"DELETE FROM \"{tableName.ToLower()}\" WHERE \"Id\" = {id} ";
         using (_connection = new NpgsqlConnection(ConnectionString))
         {
             _connection.Open();
@@ -105,7 +109,7 @@ public class MyDataContext : IDatabaseOperation
         var type = entity?.GetType();
         var tableName = type?.Name;
 
-        var sqlExpression = $"SELECT * FROM \"{tableName}\"";
+        var sqlExpression = $"SELECT * FROM \"{tableName.ToLower()}\"";
         using (_connection = new NpgsqlConnection(ConnectionString))
         {
             _connection.Open();
@@ -135,8 +139,8 @@ public class MyDataContext : IDatabaseOperation
     {
         var tableName = typeof(T).Name;
         var type = typeof(T);
-        var sqlExpression = $"SELECT * FROM \"{tableName}\"" +
-                            $"WHERE \"id\" = {id} ";
+        var sqlExpression = $"SELECT * FROM \"{tableName.ToLower()}\"" +
+                            $"WHERE \"Id\" = {id} ";
         using (_connection = new NpgsqlConnection(ConnectionString))
         {
             _connection.Open();
