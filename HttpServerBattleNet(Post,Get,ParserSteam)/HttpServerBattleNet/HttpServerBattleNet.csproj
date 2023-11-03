@@ -12,6 +12,7 @@
       <PackageReference Include="HtmlAgilityPack" Version="1.11.54" />
       <PackageReference Include="MailKit" Version="4.2.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Npgsql" Version="7.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -57,5 +58,11 @@
       <None Update="static\404.html">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="MyDatabase">
+        <HintPath>..\..\AppDbContext\MyDatabase\bin\Debug\net6.0\MyDatabase.dll</HintPath>
+      </Reference>
     </ItemGroup>
 </Project>

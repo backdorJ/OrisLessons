@@ -1,6 +1,7 @@
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Web;
 using HtmlAgilityPack;
 using HttpServerBattleNet.asda;
 using HttpServerBattleNet.Attribuets;
@@ -25,19 +26,11 @@ public class ControllerHandler : Handler
                 .ToArray();
 
             if (strParams!.Length < 2)
-                throw new ArgumentNullException("the number of lines in the query string is less than two!");
-
-            using var streamReader = new StreamReader(context!.Request.InputStream);
-            var tempOfData = streamReader.ReadToEnd();
-            string[] formData = new[] { "" };
-            if (!String.IsNullOrEmpty(tempOfData))
-            {
-                var currentOfUserData = tempOfData?.Split('&');
-                formData = new[] { WebUtility.UrlDecode(currentOfUserData[0][6..]), currentOfUserData[1][9..] };
-            }
-
+                Console.WriteLine("the number of lines in the query string is less than two!");
+        
             var controllerName = strParams[0];
             var methodName = strParams[1];
+            var id = strParams.Length >= 3 ? strParams[2] : null;
             var assembly = Assembly.GetExecutingAssembly();
 
             var controller = assembly.GetTypes()
@@ -53,17 +46,35 @@ public class ControllerHandler : Handler
                                  ((HttpMethodAttribute)attr).ActionName.Equals(methodName,
                                      StringComparison.OrdinalIgnoreCase)));
 
-            var queryParams = new object[] { };
+            var queryParams = method?.GetParameters()
+                .Select((p, i) =>
+                {
+                    if (p.ParameterType == typeof(int) && i == 0)
+                    {
+                        // Преобразование параметра id в int
+                        return Convert.ChangeType(id, p.ParameterType);
+                    }
+                    return Convert.ChangeType(strParams[i], p.ParameterType);
+                })
+                .ToArray();
 
-            if (formData.Length > 1)
+            if (request.HttpMethod == "POST" && request.HasEntityBody)
             {
-                queryParams = method?.GetParameters()
-                    .Select((p, i) => Convert.ChangeType(formData[i], p.ParameterType))
-                    .ToArray();
-            }
+                var encoding = request.ContentEncoding;
+                var reader = new StreamReader(request.InputStream, encoding);
 
-            var resultFromMethod = method?.Invoke(Activator.CreateInstance(controller), queryParams);
-            ProcessResult(resultFromMethod, response);
+                var parsedData = HttpUtility.ParseQueryString(reader.ReadToEnd());
+                var email = parsedData["email"];
+                var password = parsedData["password"];
+                
+                var resultFromMethod = method?.Invoke(Activator.CreateInstance(controller), new object[] {email, password});
+                ProcessResult(resultFromMethod, response);   
+            }
+            else
+            { 
+                var resultFromMethod = method?.Invoke(Activator.CreateInstance(controller), queryParams);
+                ProcessResult(resultFromMethod, response);   
+            }
         }
         catch (ArgumentNullException e)
         {
@@ -87,6 +98,15 @@ public class ControllerHandler : Handler
             {
                 response.ContentType = DictionaryExtensions._dictOfExtenshions["json"];
                 var json = JsonConvert.SerializeObject(arrayOfObjects, Formatting.Indented);
+                var buffer = Encoding.UTF8.GetBytes(json);
+                response.ContentLength64 = buffer.Length;
+                response.OutputStream.Write(buffer, 0, buffer.Length);
+                break;
+            }
+            case T obj:
+            {
+                response.ContentType = DictionaryExtensions._dictOfExtenshions["json"];
+                var json = JsonConvert.SerializeObject(obj, Formatting.Indented);
                 var buffer = Encoding.UTF8.GetBytes(json);
                 response.ContentLength64 = buffer.Length;
                 response.OutputStream.Write(buffer, 0, buffer.Length);
