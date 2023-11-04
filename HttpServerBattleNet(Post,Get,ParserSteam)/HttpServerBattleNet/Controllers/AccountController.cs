@@ -15,7 +15,7 @@ public class AccountController
     public Account GetAccountById(int id)
     {
         var account = _context.SelectById<Account>(id); 
-        var access = CookieApply.IsExistCookieByProps(account.Login, account.Password);
+        var access = CookieApply.IsExistCookieByProps(account);
 
         return access ? account : new Account(){Login = "key", Password = "not found"};
     }

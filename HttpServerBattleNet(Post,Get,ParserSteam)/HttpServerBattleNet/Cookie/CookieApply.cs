@@ -11,8 +11,8 @@ public class CookieApply
     public static void CreateCookieForAccount(Account account)
     {
         
-        var cookieOfLogin = new System.Net.Cookie(account.Login, $"{account.Login}");
-        var cookieOfPassword = new System.Net.Cookie(account.Password, $"{account.Password}");
+        var cookieOfLogin = new System.Net.Cookie(nameof(account.Login), $"{account.Login}");
+        var cookieOfPassword = new System.Net.Cookie(nameof(account.Password), $"{account.Password}");
         
         _cookieContainer.Add(_domain,cookieOfLogin);
         _cookieContainer.Add(_domain,cookieOfPassword);
@@ -20,10 +20,14 @@ public class CookieApply
         Console.WriteLine("Cookies has been added.");
     }
 
-    public static bool IsExistCookieByProps(string firstName, string secondName)
+    public static bool IsExistCookieByProps(Account account)
     {
-        return _cookieContainer.GetAllCookies()
-            .Where(x => x.Name == firstName || x.Name == secondName)
-            .ToList() == null;
+        var cookies = _cookieContainer.GetAllCookies();
+        var currentCookie = cookies
+            .Where(x =>
+                x.Name == nameof(account.Login) || x.Name == nameof(account.Password) 
+                                                && x.Value == account.Login || x.Value == account.Password)
+            .ToList();
+        return currentCookie.Count != 0;
     }
 }
